@@ -5,134 +5,112 @@ A zsh plugin for SLURM that provides convenient commands for running interactive
 ## Features
 
 - `sbsh` - Run `srun bash` with configurable default arguments
-- Override CPU and GPU counts on the fly
+- `sq` - View queue for default partition (with formatted output)
+- `sqme` - View your own jobs in the queue (with formatted output)
+- Override any SLURM parameter on the fly
 - Customizable default SLURM parameters
 
 ## Configuration
 
-You can configure the default SLURM arguments by setting the following environment variables in your `.zshrc`:
+Set these environment variables in your `.zshrc`:
 
 ```zsh
-# Default account
 SLURM_DEFAULT_ACCOUNT=espresso
-
-# Default partition
 SLURM_DEFAULT_PARTITION=espresso
-
-# Default number of CPUs
 SLURM_DEFAULT_CPUS=4
-
-# Default number of GPUs
 SLURM_DEFAULT_GPUS=1
-
-# Additional default arguments (space-separated)
 SLURM_DEFAULT_EXTRA_ARGS="--pty"
 ```
 
-If not set, the defaults are:
-- Account: `espresso`
-- Partition: `espresso`
-- CPUs: `4`
-- GPUs: `1`
-- Extra args: `--pty`
+Defaults (if not set): `espresso` account/partition, `4` CPUs, `1` GPU, `--pty` extra args.
 
 ## Usage
 
-### Basic usage
+### sbsh - Run interactive bash session
 
-```zsh
+**Default command:**
+```sh
 sbsh
+# Runs: srun -A espresso -p espresso -c 4 --gres=gpu:1 --pty bash
 ```
 
-This will run: `srun -A espresso -p espresso -c 4 --gres=gpu:1 --pty bash`
-
-### Override CPUs
-
+**Examples:**
 ```zsh
-sbsh -c 16
-```
-
-This will run: `srun -A espresso -p espresso -c 16 --gres=gpu:1 --pty bash`
-
-### Override GPUs
-
-```zsh
-sbsh -g 4
-```
-
-This will run: `srun -A espresso -p espresso -c 4 --gres=gpu:4 --pty bash`
-
-### Request specific GPU type
-
-```zsh
-sbsh -g A100:2
-```
-
-This will run: `srun -A espresso -p espresso -c 4 --gres=gpu:A100:2 --pty bash`
-
-### Override both CPUs and GPUs
-
-```zsh
+# Override CPUs and GPUs
 sbsh -c 16 -g 4
-```
 
-Or with GPU type:
+# Request specific GPU type
+sbsh -g A100:2
 
-```zsh
-sbsh -c 16 -g L4:1
-```
+# Override partition
+sbsh -p public
 
-### Pass additional arguments to srun
-
-```zsh
+# Pass any SLURM arguments (override defaults)
 sbsh --time=01:00:00 --mem=32G
+sbsh -A myaccount --partition=public
+
+# Combine options
+sbsh -c 16 -g A100:2 -p public --time=01:00:00 --mem=32G
 ```
 
-You can also pass additional `--gres` arguments directly:
+**Note:** Any SLURM argument can be passed directly. User arguments override defaults (SLURM uses the last occurrence of conflicting flags).
 
-```zsh
-sbsh --gres=gpu:L4:1
+### sq - View queue
+
+**Default command:**
+```sh
+sq
+# Runs: squeue -p espresso --sort=+u -o "%.10i %.9P %.10j %.8u  %.10M %.6C %.14b %.10R" | sed 's/gres:gpu://g'
 ```
 
-This will run: `srun -A espresso -p espresso -c 4 --gres=gpu:1 --pty --gres=gpu:L4:1 bash`
-
-You can combine all options:
-
+**Examples:**
 ```zsh
-sbsh -c 16 -g A100:2 --time=01:00:00 --mem=32G
+# Specific partition
+sq -p public
+sq --partition=public
+
+# With filters
+sq -p public --states=RUNNING
+```
+
+### sqme - View your jobs
+
+**Default command:**
+```sh
+sqme
+# Runs: squeue -u $USER --sort=+u -o "%.10i %.9P %.10j %.8u  %.10M %.6C %.14b %.10R" | sed 's/gres:gpu://g'
+```
+
+**Examples:**
+```zsh
+# With filters
+sqme --states=RUNNING
+sqme --partition=public --states=PENDING
 ```
 
 ## Installation
 
-### If you use [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh)
+### oh-my-zsh
 
-* Clone this repository into `~/.oh-my-zsh/custom/plugins`
 ```sh
 cd ~/.oh-my-zsh/custom/plugins
 git clone https://github.com/yourusername/slurm slurm
 ```
-* After that, add `slurm` to your oh-my-zsh plugins array in your `.zshrc`:
-```zsh
-plugins=(... slurm)
-```
 
-### If you use [Zgen](https://github.com/tarjoilija/zgen)
+Add to `.zshrc`: `plugins=(... slurm)`
 
-1. Add `zgen load yourusername/slurm` to your `.zshrc` with your other plugin
-2. run `zgen save`
+### Zgen
 
-### If you use [ZPM](https://github.com/zpm-zsh/zpm)
+Add to `.zshrc`: `zgen load yourusername/slurm`, then run `zgen save`
 
-* Add `zpm load yourusername/slurm` into your `.zshrc`
+### ZPM
 
-### Manual installation
+Add to `.zshrc`: `zpm load yourusername/slurm`
 
-1. Clone this repository:
+### Manual
+
 ```sh
 git clone https://github.com/yourusername/slurm ~/.zsh/plugins/slurm
 ```
 
-2. Source the plugin in your `.zshrc`:
-```zsh
-source ~/.zsh/plugins/slurm/slurm.plugin.zsh
-```
+Add to `.zshrc`: `source ~/.zsh/plugins/slurm/slurm.plugin.zsh`
