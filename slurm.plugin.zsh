@@ -71,6 +71,31 @@ function sbsh() {
   command srun $srun_args
 }
 
+# sr - srun with default arguments
+# Usage: sr [any srun arguments...] [command]
+# Any SLURM argument can be passed directly and will override defaults
+# SLURM uses the last occurrence of conflicting flags, so user args override defaults
+function sr() {
+  local srun_args=()
+
+  # Build srun command with defaults first
+  srun_args=(
+    -A "$SLURM_DEFAULT_ACCOUNT"
+    -p "$SLURM_DEFAULT_PARTITION"
+    -c "$SLURM_DEFAULT_CPUS"
+    --gres="gpu:$SLURM_DEFAULT_GPUS"
+  )
+
+  # Add user-provided arguments (these will override defaults if they conflict)
+  # SLURM uses the last occurrence of conflicting flags, so user args override defaults
+  if [[ $# -gt 0 ]]; then
+    srun_args+=("$@")
+  fi
+
+  # Execute srun
+  command srun $srun_args
+}
+
 # sq - squeue with default partition
 # Usage: sq [any squeue arguments...]
 # Any squeue argument can be passed directly and will override defaults
